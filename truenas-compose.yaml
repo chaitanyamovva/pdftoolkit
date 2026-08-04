@@ -1,0 +1,42 @@
+# truenas-compose.yaml
+#
+# Paste this into TrueNAS SCALE's "Install via YAML" custom app installer.
+# Location: Apps -> Discover -> the (...) three-dot menu next to
+# "Custom App" -> Install via YAML.
+#
+# This runs two containers together:
+#   1. pdf-signer   - the app itself
+#   2. cloudflared  - Cloudflare Tunnel client, exposes it at your domain
+#                      over HTTPS with no port-forwarding needed
+#
+# BEFORE PASTING, EDIT:
+#   1. CLOUDFLARE_TUNNEL_TOKEN below - paste the token from your Cloudflare
+#      Zero Trust tunnel (see chat instructions for how to get this)
+#   2. ports - change 30500 if you want a different LAN port (optional,
+#      you can remove this entirely once the tunnel works if you only
+#      want access via your domain)
+#
+# Pool used below: Apps  (confirmed from your dataset screenshot:
+# path shown was "Apps/pdf-signer/certs")
+
+services:
+  pdf-signer:
+    image: movvasaichaitanya/pdf-signer:latest
+    restart: unless-stopped
+    ports:
+      - "30500:5000"
+    volumes:
+      - /mnt/Apps/pdf-signer/certs:/app/certs
+      - /mnt/Apps/pdf-signer/data:/app/data
+    environment:
+      - SIGNER_CERT_DIR=/app/certs
+      - SIGNATURE_DIR=/app/data/signatures
+      - PDF_STORAGE_DIR=/app/data/pdfs
+      - SIGNER_TMP_DIR=/tmp/pdf-signer
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run --token PASTE_YOUR_TUNNEL_TOKEN_HERE
+    depends_on:
+      - pdf-signer

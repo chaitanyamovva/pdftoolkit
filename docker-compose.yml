@@ -1,0 +1,15 @@
+services:
+  pdf-signer:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      # Keep the same signing certificate across restarts. Remove this
+      # if you want a fresh self-signed cert generated every run.
+      - pdf-signer-certs:/app/certs
+      # Persist the signature library and saved-PDFs library (both live under /app/data)
+      - pdf-signer-data:/app/data
+
+volumes:
+  pdf-signer-certs:
+  pdf-signer-data:
